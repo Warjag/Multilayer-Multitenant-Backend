@@ -1,0 +1,32 @@
+ihk-local-db/
+
+api/
+ ├── auth_api/
+ │    ├── main.py
+ │    ├── requirements.txt
+ │    └── .env
+ ├── customer_api/
+ │    ├── main.py
+ │    ├── requirements.txt
+ │    └── .env
+ ├── portal_api/
+ │    ├── main.py
+ │    ├── requirements.txt
+ │    └── .env
+ ├── business_api/
+ │    ├── main.py
+ │    ├── requirements.txt
+ │    └── .env
+ └── admin_api/
+      ├── main.py
+      ├── requirements.txt
+      └── .env
+
+├── warjag-monitor/          # PyQt6 Monitoring Dashboard
+│   ├── monitor_dashboard.py    # Hauptprogramm
+│   ├── requirements.txt        # Nur was die App braucht (PyQt6, requests)
+│   └── build_exe.ps1           # Script zum Bauen einer .exe mit PyInstaller
+│
+├── docker-compose.yml
+├── .env
+└── README.md

@@ -1,0 +1,295 @@
+
+
+services:
+  # =======================
+  # Datenbanken
+  # =======================
+  auth_db:
+    build: ./pg-init-image
+    environment:
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: ${AUTH_DB_PASS}
+      POSTGRES_DB: auth_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  admin_db:
+    build: ./pg-init-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: ${ADMIN_DB_PASS}
+      POSTGRES_DB: admin_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d admin_db || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - admin_db_data:/var/lib/postgresql/data
+    ports:
+      - "5440:5432"
+
+  customer_db:
+    build: ./pg-init-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: customer_user
+      POSTGRES_PASSWORD: ${CUSTOMER_DB_PASS}
+      POSTGRES_DB: customer_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U customer_user -d customer_db || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - customer_db_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+      
+  portal_users_db:
+    build: ./pg-init-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: portal_user
+      POSTGRES_PASSWORD: ${PORTAL_USERS_DB_PASS}
+      POSTGRES_DB: portal_users_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal_user -d portal_users_db || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - portal_users_db_data:/var/lib/postgresql/data
+    ports:
+      - "5439:5432"                  
+
+  business_db1:
+    build: ./pg-init-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: biz1_user
+      POSTGRES_PASSWORD: ${BUSINESS_DB1_PASS}
+      POSTGRES_DB: business_db1
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biz1_user -d business_db1 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - business_db1_data:/var/lib/postgresql/data
+    ports:
+      - "5436:5432"
+
+  business_db2:
+    build: ./pg-init-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: biz2_user
+      POSTGRES_PASSWORD: ${BUSINESS_DB2_PASS}
+      POSTGRES_DB: business_db2
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biz2_user -d business_db2 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - business_db2_data:/var/lib/postgresql/data
+    ports:
+      - "5437:5432"
+
+  business_db3:
+    build: ./pg-init-image
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: biz3_user
+      POSTGRES_PASSWORD: ${BUSINESS_DB3_PASS}
+      POSTGRES_DB: business_db3
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U biz3_user -d business_db3 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    volumes:
+      - business_db3_data:/var/lib/postgresql/data
+    ports:
+      - "5438:5432"
+
+  pgadmin:
+    build: ./pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASS}
+    ports:
+      - "9090:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # =======================
+  # Gateway (Traefik)
+  # =======================
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"             # ⚠️ Nur für Entwicklung!
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"       # API Gateway Port
+      - "8080:8080"   # Traefik Dashboard (http://localhost:8080)
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  # =======================
+  # APIs (alle laufen auf 8000 intern)
+  # =======================
+  auth_api:
+    build: ./auth_api
+    container_name: auth_api
+    restart: unless-stopped
+    env_file:
+      - ./auth_api/.env
+    environment:
+      PORTAL_API_URL: "http://portal_api:8000/portal"
+      TZ: Europe/Berlin
+    depends_on:
+      auth_db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
+      - "traefik.http.services.auth.loadbalancer.server.port=8000"
+
+  customer_api:
+    build: ./customer_api
+    container_name: customer_api
+    restart: unless-stopped
+    env_file:
+      - ./customer_api/.env
+    depends_on:
+      customer_db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.customer.rule=PathPrefix(`/customer`)"
+      - "traefik.http.services.customer.loadbalancer.server.port=8000"
+
+  portal_api:
+    build: ./portal_api
+    container_name: portal_api
+    restart: unless-stopped
+    env_file:
+      - ./portal_api/.env
+    environment:
+      TZ: Europe/Berlin
+    depends_on:
+      portal_users_db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portal.rule=PathPrefix(`/portal`)"
+      - "traefik.http.services.portal.loadbalancer.server.port=8000"
+
+  business_api:
+    build: ./business_api
+    container_name: business_api
+    restart: unless-stopped
+    env_file:
+      - ./business_api/.env
+    depends_on:
+      business_db1:
+        condition: service_healthy
+      business_db2:
+        condition: service_healthy
+      business_db3:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.business.rule=PathPrefix(`/business`)"
+      - "traefik.http.services.business.loadbalancer.server.port=8000"
+    
+
+  admin_api:
+    build: ./admin_api
+    container_name: admin_api
+    restart: unless-stopped
+    env_file:
+      - ./admin_api/.env
+    depends_on:
+      admin_db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/admin`)"
+      - "traefik.http.services.admin.loadbalancer.server.port=8000"
+
+  # =======================
+  # Monitor
+  # =======================
+  monitor:
+    build: ./monitor
+    container_name: warjag_monitor
+    restart: unless-stopped
+    environment:
+      MON_API_BASE: http://traefik
+      MON_INTERVAL_SEC: 60
+      MON_LOG_PATH: /logs/monitor.log
+    depends_on:
+      - traefik
+    volumes:
+      - monitor_logs:/logs
+    ports:
+      - "9000:9000"
+      
+  
+  # ========================
+  # SMTP-Relay
+  #=========================
+  mailrelay:
+    image: boky/postfix
+    container_name: mailrelay
+    restart: unless-stopped
+    environment:
+      - MAIL_RELAY_HOST=smtp.gmail.com
+      - MAIL_RELAY_PORT=587
+      - MAIL_RELAY_USER=${GMAIL_USER}
+      - MAIL_RELAY_PASSWORD=${GMAIL_APP_PASS}
+      - MAIL_FROM_ADDRESS=${GMAIL_USER}
+      - MAIL_DOMAIN=gmail.com
+      - ALLOWED_SENDER_DOMAINS=gmail.com
+      - TZ=Europe/Berlin
+    ports:
+      - "2525:587"  # Port 2525 für lokale App-Kommunikation
+    networks:
+      - default
+
+
+# =======================
+# Volumes
+# =======================
+volumes:
+  auth_db_data:
+  admin_db_data:
+  customer_db_data:
+  portal_users_db_data:
+  business_db1_data:
+  business_db2_data:
+  business_db3_data:
+  pgadmin_data:
+  monitor_logs:

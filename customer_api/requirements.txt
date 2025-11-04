@@ -1,0 +1,9 @@
+
+
+
+fastapi
+uvicorn[standard]
+asyncpg
+pydantic[email]
+PyJWT
+python-dotenv

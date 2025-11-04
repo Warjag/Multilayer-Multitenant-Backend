@@ -1,0 +1,24 @@
+docker tag warjag_multi_layer_db-auth_api:v.0.1 warjag/warjag_multi_layer_db-auth_api:v0.1
+
+docker tag warjag_multi_layer_db-admin_api:v.0.1 warjag/warjag_multi_layer_db-admin_api:v0.1
+
+docker tag warjag_multi_layer_db-portal_api:v.0.1 warjag/warjag_multi_layer_db-portal_api:v0.1
+
+docker tag warjag_multi_layer_db-business_api:v.0.1 warjag/warjag_multi_layer_db-business_api:v0.1
+
+docker tag warjag_multi_layer_db-customer_api:v.0.1 warjag/warjag_multi_layer_db-customer_api:v0.1
+
+docker tag warjag_multi_layer_db-portal_users_db:v.0.1 warjag/warjag_multi_layer_db-portal_users_db:v0.1
+
+docker tag warjag_multi_layer_db-business_db1:v.0.1 warjag/warjag_multi_layer_db-business_db1:v0.1
+
+docker tag warjag_multi_layer_db-business_db2:v.0.1 warjag/warjag_multi_layer_db-business_db2:v0.1
+
+docker tag warjag_multi_layer_db-business_db3:v.0.1 warjag/warjag_multi_layer_db-business_db3:v0.1
+
+docker tag warjag_multi_layer_db-auth_db:latest warjag_multi_layer_db-auth_db:v.0.1
+docker tag warjag_multi_layer_db-admin_db:latest warjag_multi_layer_db-admin_db:v.0.1
+docker tag warjag_multi_layer_db-customer_db:latest warjag/warjag_multi_layer_db-customer_db:v.0.1
+docker tag warjag/warjag_multi_layer_db:monitor warjag/warjag_multi_layer_db:monitor-v.0.1
+docker tag warjag/warjag_multi_layer_db:pgadmin warjag/warjag_multi_layer_db:pgadmin-v.0.1
+docker tag traefik:v3.0 traefik:v3.0-0.1

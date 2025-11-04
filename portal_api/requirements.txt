@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+asyncpg
+argon2-cffi
+pydantic[email]
+PyJWT
+python-dotenv
+httpx
