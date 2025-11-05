@@ -1,4 +1,4 @@
-Struktur v0.1
+Struktur v0.11
 
 hammerheld_backup/   
    admin_api/
@@ -46,7 +46,7 @@ hammerheld_backup/
    hilfe/ # privat
       docker_tags
    warjag_frontend/ #API-test-frontend 
-      index.html
+      index.html #python -m http.server 8090
 .env
 .gitattributes
 docker-compose.yml
