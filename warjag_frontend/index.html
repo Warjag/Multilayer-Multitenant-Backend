@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+    h1, h2 { text-align: center; }
+    form { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+    label { display: block; margin: 10px 0 5px; }
+    input { width: 100%; padding: 8px; margin-bottom: 10px; }
+    button { width: 100%; padding: 10px; background: #007BFF; color: white; border: none; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    #result, #loginResult, #portalResult, #authStatus { margin-top: 10px; font-weight: bold; }
+    #authStatus { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Portal Demo</h1>
+
+  <!-- Registrierung -->
+  <h2>Registrierung</h2>
+  <form id="regForm">
+    <label>Email:</label>
+    <input type="email" id="reg_email" required>
+    <label>Passwort:</label>
+    <input type="password" id="reg_password" minlength="8" required>
+    <button type="submit">Registrieren</button>
+  </form>
+  <p id="result"></p>
+
+  <!-- Login -->
+  <h2>Login</h2>
+  <form id="loginForm">
+    <label>Email:</label>
+    <input type="email" id="login_email" required>
+    <label>Passwort:</label>
+    <input type="password" id="login_password" required>
+    <button type="submit">Login</button>
+  </form>
+  <p id="loginResult"></p>
+  <p id="authStatus"></p>
+
+  <!-- Portal User Daten -->
+  <h2>Portal User Daten</h2>
+  <form id="portalForm">
+    <label>Vorname:</label>
+    <input type="text" id="firstName" required>
+    <label>Nachname:</label>
+    <input type="text" id="secondName" required>
+    <label>Email:</label>
+    <input type="email" id="portalEmail" required>
+    <label>Telefon:</label>
+    <input type="text" id="tel" required>
+    <label>PLZ:</label>
+    <input type="text" id="plz" required>
+    <label>Stadt:</label>
+    <input type="text" id="city" required>
+    <label>Straße:</label>
+    <input type="text" id="street" required>
+    <label>Hausnummer:</label>
+    <input type="text" id="building" required>
+    <button type="submit">Daten speichern</button>
+  </form>
+  <p id="portalResult"></p>
+
+  <script>
+    const API_BASE = "http://localhost/auth";
+    let token = null;
+
+    // Registrierung
+    document.getElementById("regForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const email = document.getElementById("reg_email").value.trim();
+      const password = document.getElementById("reg_password").value;
+
+      const out = document.getElementById("result");
+      out.textContent = "⏳ Registrierung läuft…";
+
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (res.status === 409) {
+          out.textContent = "⚠️ Diese E-Mail ist bereits registriert.";
+          return;
+        }
+
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        // Erfolgreich registriert → Hinweis auf Mail
+        out.innerHTML = `✅ <b>${data.message}</b><br>
+          Bitte überprüfe dein Postfach, eine Bestätigungsmail wurde gesendet an <b>${email}</b>.`;
+
+      } catch (err) {
+        out.textContent = "❌ Fehler: " + err.message;
+      }
+    });
+
+    // Login
+    document.getElementById("loginForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const email = document.getElementById("login_email").value.trim();
+      const password = document.getElementById("login_password").value;
+
+      const out = document.getElementById("loginResult");
+      out.textContent = "⏳ Login läuft…";
+
+      try {
+        const res = await fetch(`${API_BASE}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        token = data.access_token;
+        out.textContent = "✅ Eingeloggt, Token gespeichert.";
+        document.getElementById("authStatus").textContent = "🔑 Authentifiziert als " + email;
+
+      } catch (err) {
+        out.textContent = "❌ Fehler: " + err.message;
+      }
+    });
+
+    // Portal User Daten speichern
+    document.getElementById("portalForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const out = document.getElementById("portalResult");
+
+      if (!token) {
+        out.textContent = "❌ Bitte zuerst einloggen!";
+        return;
+      }
+
+      const payload = {
+        pers_first_name: document.getElementById("firstName").value.trim(),
+        pers_second_name: document.getElementById("secondName").value.trim(),
+        pers_email: document.getElementById("portalEmail").value.trim(),
+        pers_tel: document.getElementById("tel").value.trim(),
+        pers_adress_plz: document.getElementById("plz").value.trim(),
+        pers_adress_city: document.getElementById("city").value.trim(),
+        pers_adress_street: document.getElementById("street").value.trim(),
+        pers_adress_building: document.getElementById("building").value.trim(),
+      };
+
+      out.textContent = "⏳ Daten werden gesendet…";
+
+      try {
+        const res = await fetch("http://localhost/portal/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        out.textContent = "✅ Gespeichert: " + JSON.stringify(data);
+
+      } catch (err) {
+        out.textContent = "❌ Fehler: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
